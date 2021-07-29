@@ -23,21 +23,22 @@ module Fastlane
           passed_nodes.each do |node|
             class_path = node['classname']
             context = parse_context(class_path)
-            result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'], webLink: node['webLink'])
+            result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'])
             suite.passed.push result
           end
           skipped_nodes.each do |node|
             class_path = node['classname']
             context = parse_context(class_path)
-            result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'], webLink: node['webLink'])
+            result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'])
             suite.skipped.push result
           end
           failed_nodes.each do |node|
             class_path = node['classname']
             context = parse_context(class_path)
             failure = node.xpath('.//failure').first
+            webLink = node.xpath('.//webLink').first
             result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'],
-                                    fail_message: failure['message'], stack_trace: failure.text, webLink: node['webLink'])
+                                    fail_message: failure['message'], stack_trace: failure.text, webLink: webLink.text)
             suite.failed.push result
           end
 

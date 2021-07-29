@@ -50,6 +50,9 @@ module Fastlane
 
         UI.message "\n#{table}\n"
 
+        resultsDictionary = {}
+        failures = 0
+
         all_results[0].suites.each do |suite|
           all_failed = suite.failed#map{ |r| r.failed }.flatten
           all_failed.each do |failed|
@@ -75,10 +78,41 @@ module Fastlane
             UI.message "#{message} #{test_counts}"
           else
             message = "You have failing tests!".red
-            UI.user_error! "#{message} #{test_counts}"
+            #UI.user_error! "#{message} #{test_counts}"
+            UI.message "#{message} #{test_counts}"
           end
-        end
 
+          # For the Slack 
+          failures += failed_count
+          testCaseSummary = ""
+
+          suite.failed.each do |result|
+            testCaseSummary += "🔥 <#{result.webLink}|#{result.name}>\n"
+          end
+          # suite.passed.each do |result|
+          #   testCaseSummary += "✅ #{result.name}\n"
+          # end
+          suite.skipped.each do |result|
+            testCaseSummary += "❔ #{result.name}\n"
+          end
+
+          totalNrOfTest = suite.tests.to_i
+          totalNrOfSuccessfulTest = passed_count
+
+          testProcessDurationSeconds = suite.duration.to_i || 0
+          msgTestTime = "⏳ Test: #{testProcessDurationSeconds.to_i / 60} min #{testProcessDurationSeconds.to_i % 60} sec"
+
+          totalTestRuns = "Tests run: #{totalNrOfSuccessfulTest}/#{totalNrOfTest}"
+          if totalNrOfTest > 0 && totalNrOfSuccessfulTest == totalNrOfTest
+            totalTestRuns = "✅ #{totalTestRuns}, *100% success*."
+          else
+            percentage = totalNrOfSuccessfulTest * 100 / totalNrOfTest
+            totalTestRuns = ":warning: #{totalTestRuns}, *#{percentage}% success*."
+          end  
+
+          resultsDictionary["#{suite.name}"] = "#{totalTestRuns}\n#{msgTestTime}.\n#{testCaseSummary}"
+        end
+        return (failures == 0), resultsDictionary
       end
 
       def self.description
