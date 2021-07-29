@@ -11,13 +11,14 @@ module Fastlane
         suite_nodes = xml_doc.xpath("//testsuite")
 
         suite_nodes.each do |suite_node|
-          suite_name = suite_node['name']
+          total_suite_name = suite_node['name']
+          suite_name = parse_name(suite_node['name'])
 
           suite = OpenStruct.new(name: suite_name, tests: suite_node['tests'], failures: suite_node['failures'], duration: suite_node['time'], skipped:[], failed:[], passed:[])
 
-          failed_nodes = suite_node.xpath("//testsuite[@name='#{suite_name}']//testcase[failure]")
-          skipped_nodes = suite_node.xpath("//testsuite[@name='#{suite_name}']//testcase[skipped]")
-          passed_nodes = suite_node.xpath("//testsuite[@name='#{suite_name}']//testcase[not(failure) and not(skipped)]")
+          failed_nodes = suite_node.xpath("//testsuite[@name='#{total_suite_name}']//testcase[failure]")
+          skipped_nodes = suite_node.xpath("//testsuite[@name='#{total_suite_name}']//testcase[skipped]")
+          passed_nodes = suite_node.xpath("//testsuite[@name='#{total_suite_name}']//testcase[not(failure) and not(skipped)]")
 
           passed_nodes.each do |node|
             class_path = node['classname']
@@ -51,6 +52,13 @@ module Fastlane
           class_name = dot_rindex ? class_path[dot_rindex+1..-1] : ''
           return class_name.gsub(/\$/, ', ')
       end
+
+      def self.parse_name(name) 
+          index = name.rindex('#')
+          name = index ? name[0..index-1] : name
+          return name
+      end
+
     end
   end
 end
