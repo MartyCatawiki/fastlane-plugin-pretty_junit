@@ -31,7 +31,7 @@ module Fastlane
             end
 
             results.suites.each do |suite|
-              t.add_row ['📱', suite.context.orange, suite.name.orange, suite.duration.orange]
+              t.add_row ['📱', suite.context, suite.name, suite.duration]
 
               suite.failed.each do |result|
                 t.add_row ['🔥', result.context.red, result.name.red, result.duration.red]
@@ -48,34 +48,37 @@ module Fastlane
           end
         end
 
-        # all_failed = all_results.map{ |r| r.failed }.flatten
-        # all_failed.each do |failed|
-        #   UI.error "Failed #{failed.class_path}.#{failed.name} with message: \n#{failed.fail_message}\nStack trace:\n#{failed.stack_trace}\n"
-        # end
+        UI.message "\n#{table}\n"
 
-        # UI.message "\n#{table}\n"
+        all_results[0].suites.each do |suite|
+          all_failed = suite.failed#map{ |r| r.failed }.flatten
+          all_failed.each do |failed|
+            UI.error "Failed #{failed.class_path}.#{failed.name} with message: \n#{failed.fail_message}\nStack trace:\n#{failed.stack_trace}\n"
+          end
 
-        # all_failed.each do |failed|
-        #   UI.error "Failed #{failed.class_path}.#{failed.name} with message:\n\n#{failed.fail_message}\nSee above for stack trace.\n"
-        # end
+          all_failed.each do |failed|
+            UI.error "Failed #{failed.class_path}.#{failed.name} with message:\n\n#{failed.fail_message}\nSee above for stack trace.\n"
+          end
 
-        # failed_count = all_results.inject(0) { |sum, r| sum + r.failed.length }
-        # skipped_count = all_results.inject(0) { |sum, r| sum + r.skipped.length }
-        # passed_count = all_results.inject(0) { |sum, r| sum + r.passed.length }
+          failed_count = suite.failed.length #suite.inject(0) { |sum, r| sum + r.failed.length }
+          skipped_count = suite.skipped.length #suite.inject(0) { |sum, r| sum + r.skipped.length }
+          passed_count = suite.passed.length #suite.inject(0) { |sum, r| sum + r.passed.length }
 
-        # messages = []
-        # messages << "#{passed_count} passed".green
-        # messages << "#{skipped_count} skipped"
-        # messages << "#{failed_count} failed".red
-        # test_counts = "#{messages.join(', ')}"
+          messages = []
+          messages << "#{passed_count} passed".green
+          messages << "#{skipped_count} skipped"
+          messages << "#{failed_count} failed".red
+          test_counts = "#{messages.join(', ')}"
 
-        # if failed_count == 0
-        #   message = "All tests passed!".green
-        #   UI.message "#{message} #{test_counts}"
-        # else
-        #   message = "You have failing tests!".red
-        #   UI.user_error! "#{message} #{test_counts}"
-        # end
+          if failed_count == 0
+            message = "All tests passed!".green
+            UI.message "#{message} #{test_counts}"
+          else
+            message = "You have failing tests!".red
+            UI.user_error! "#{message} #{test_counts}"
+          end
+        end
+
       end
 
       def self.description

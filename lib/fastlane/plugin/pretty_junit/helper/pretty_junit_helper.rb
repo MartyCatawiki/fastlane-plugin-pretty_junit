@@ -5,7 +5,7 @@ module Fastlane
     class PrettyJunitHelper
 
       def self.parse_junit_xml(file_path)
-        suites = OpenStruct.new(suite:[])
+        total = OpenStruct.new(suites:[])
         xml_doc = File.open(file_path) { |f| Nokogiri::XML(f) }
 
         suite_nodes = xml_doc.xpath("//testsuite")
@@ -13,40 +13,37 @@ module Fastlane
         suite_nodes.each do |suite_node|
           suite_name = suite_node['name']
 
-          suite = OpenStruct.new(name: suite_name, tests: suite_node['tests'], failures: suite_node['failures'], duration: suite_node['time'], results:[])
+          suite = OpenStruct.new(name: suite_name, tests: suite_node['tests'], failures: suite_node['failures'], duration: suite_node['time'], skipped:[], failed:[], passed:[])
 
-          results = OpenStruct.new(skipped:[], failed:[], passed:[])
-
-          failed_nodes = suite_node.xpath("//testcase[failure]")
-          skipped_nodes = suite_node.xpath("//testcase[skipped]")
-          passed_nodes = suite_node.xpath("//testcase[not(failure) and not(skipped)]")
+          failed_nodes = suite_node.xpath("//testsuite[@name='#{suite_name}']//testcase[failure]")
+          skipped_nodes = suite_node.xpath("//testsuite[@name='#{suite_name}']//testcase[skipped]")
+          passed_nodes = suite_node.xpath("//testsuite[@name='#{suite_name}']//testcase[not(failure) and not(skipped)]")
 
           passed_nodes.each do |node|
             class_path = node['classname']
             context = parse_context(class_path)
-            result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'])
-            results.passed.push result
+            result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'], webLink: node['webLink'])
+            suite.passed.push result
           end
           skipped_nodes.each do |node|
             class_path = node['classname']
             context = parse_context(class_path)
-            result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'])
-            results.skipped.push result
+            result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'], webLink: node['webLink'])
+            suite.skipped.push result
           end
           failed_nodes.each do |node|
             class_path = node['classname']
             context = parse_context(class_path)
             failure = node.xpath('.//failure').first
             result = OpenStruct.new(name: node['name'], context: context, class_path: class_path, duration: node['time'],
-                                    fail_message: failure['message'], stack_trace: failure.text)
-            results.failed.push result
+                                    fail_message: failure['message'], stack_trace: failure.text, webLink: node['webLink'])
+            suite.failed.push result
           end
-          suite.results.push results
 
-          suites.suite.push suite
+          total.suites.push suite
         end
 
-        return suites
+        return total
       end
 
       def self.parse_context(class_path) 
