@@ -8,11 +8,18 @@ module Fastlane
         total = OpenStruct.new(suites:[])
         xml_doc = File.open(file_path) { |f| Nokogiri::XML(f) }
 
+        dot_rindex = file_path.rindex('/')
+        suite_name = file_path[0..dot_rindex-1]
+        dot_rindex2 = suite_name.rindex('/shard')
+        suite_name = file_path[dot_rindex2+1..dot_rindex-1]
+
+        UI.message "Suite name: #{suite_name}"
+
         suite_nodes = xml_doc.xpath("//testsuite")
 
         suite_nodes.each do |suite_node|
           total_suite_name = suite_node['name']
-          suite_name = parse_name(suite_node['name'])
+          # suite_name = parse_name(suite_node['name'])
 
           suite = OpenStruct.new(name: suite_name, tests: suite_node['tests'], failures: suite_node['failures'], duration: suite_node['time'], skipped:[], failed:[], passed:[])
 

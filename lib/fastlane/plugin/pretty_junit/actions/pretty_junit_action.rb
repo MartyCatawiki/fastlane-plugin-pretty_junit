@@ -17,6 +17,8 @@ module Fastlane
         UI.message "Processing files: #{matching_files.join(", ")}"
 
         all_results = []
+        total = OpenStruct.new(suites:[])
+
         headings = ['', 'Context', 'Test', 'Duration']
         table = Terminal::Table.new(title: "Test Results", headings: headings) do |t|
 
@@ -25,12 +27,26 @@ module Fastlane
             results = nil
             begin
               results = Helper::PrettyJunitHelper.parse_junit_xml(file)
-              all_results << results
+              # all_results << results
             rescue Exception => ex
               UI.crash! "An error occurred while trying to parse \"#{file}\": #{ex}"
             end
 
             results.suites.each do |suite|
+              # foundAlready = false
+              # total.suites.each do |existingSuite|
+              #   if existingSuite.name == suite.name
+              #     foundAlready = true
+              #   end  
+              #   existingSuite.tests += suite.tests
+              #   existingSuite.failures += suite.failures
+              #   existingSuite.duration += suite.duration
+              # end  
+              # if !foundAlready 
+              #   total.suites.push suite
+              # end  
+              total.suites.push suite
+
               t.add_row ['📱', suite.context, suite.name, suite.duration]
 
               suite.failed.each do |result|
@@ -53,7 +69,9 @@ module Fastlane
         resultsDictionary = {}
         failures = 0
 
-        all_results[0].suites.each do |suite|
+        #all_results << total
+
+        total.suites.each do |suite|
           all_failed = suite.failed#map{ |r| r.failed }.flatten
           all_failed.each do |failed|
             UI.error "Failed #{failed.class_path}.#{failed.name} with message: \n#{failed.fail_message}\nStack trace:\n#{failed.stack_trace}\n"
@@ -75,11 +93,11 @@ module Fastlane
 
           if failed_count == 0
             message = "All tests passed!".green
-            UI.message "#{message} #{test_counts}"
+            UI.message "#{suite.name}: #{message} #{test_counts}"
           else
             message = "You have failing tests!".red
             #UI.user_error! "#{message} #{test_counts}"
-            UI.message "#{message} #{test_counts}"
+            UI.message "#{suite.name}: #{message} #{test_counts}"
           end
 
           # For the Slack 
@@ -92,11 +110,11 @@ module Fastlane
           # suite.passed.each do |result|
           #   testCaseSummary += "✅ #{result.name}\n"
           # end
-          suite.skipped.each do |result|
-            testCaseSummary += "❔ #{result.name}\n"
-          end
+          # suite.skipped.each do |result|
+          #   testCaseSummary += "❔ #{result.name}\n"
+          # end
 
-          totalNrOfTest = suite.tests.to_i
+          totalNrOfTest = suite.tests.to_i - skipped_count
           totalNrOfSuccessfulTest = passed_count
 
           testProcessDurationSeconds = suite.duration.to_i || 0
@@ -112,6 +130,7 @@ module Fastlane
 
           resultsDictionary["#{suite.name}"] = "#{totalTestRuns}\n#{msgTestTime}.\n#{testCaseSummary}"
         end
+        UI.message resultsDictionary
         return (failures == 0), resultsDictionary
       end
 
