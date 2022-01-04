@@ -105,7 +105,8 @@ module Fastlane
           testCaseSummary = ""
 
           suite.failed.each do |result|
-            testCaseSummary += "🔥 <#{result.webLink}|#{result.name}>\n"
+            #testCaseSummary += "🔥 <#{result.webLink}|#{result.name}>\n"
+            testCaseSummary += "🔥 #{result.name}\n"
           end
           # suite.passed.each do |result|
           #   testCaseSummary += "✅ #{result.name}\n"
