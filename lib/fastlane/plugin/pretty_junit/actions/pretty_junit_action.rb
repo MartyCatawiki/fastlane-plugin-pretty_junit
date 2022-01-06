@@ -27,24 +27,11 @@ module Fastlane
             results = nil
             begin
               results = Helper::PrettyJunitHelper.parse_junit_xml(file)
-              # all_results << results
             rescue Exception => ex
               UI.crash! "An error occurred while trying to parse \"#{file}\": #{ex}"
             end
 
             results.suites.each do |suite|
-              # foundAlready = false
-              # total.suites.each do |existingSuite|
-              #   if existingSuite.name == suite.name
-              #     foundAlready = true
-              #   end  
-              #   existingSuite.tests += suite.tests
-              #   existingSuite.failures += suite.failures
-              #   existingSuite.duration += suite.duration
-              # end  
-              # if !foundAlready 
-              #   total.suites.push suite
-              # end  
               total.suites.push suite
 
               t.add_row ['📱', suite.context, suite.name, suite.duration]
@@ -69,10 +56,8 @@ module Fastlane
         resultsDictionary = {}
         failures = 0
 
-        #all_results << total
-
         total.suites.each do |suite|
-          all_failed = suite.failed#map{ |r| r.failed }.flatten
+          all_failed = suite.failed
           all_failed.each do |failed|
             UI.error "Failed #{failed.class_path}.#{failed.name} with message: \n#{failed.fail_message}\nStack trace:\n#{failed.stack_trace}\n"
           end
@@ -81,9 +66,9 @@ module Fastlane
             UI.error "Failed #{failed.class_path}.#{failed.name} with message:\n\n#{failed.fail_message}\nSee above for stack trace.\n"
           end
 
-          failed_count = suite.failed.length #suite.inject(0) { |sum, r| sum + r.failed.length }
-          skipped_count = suite.skipped.length #suite.inject(0) { |sum, r| sum + r.skipped.length }
-          passed_count = suite.passed.length #suite.inject(0) { |sum, r| sum + r.passed.length }
+          failed_count = suite.failed.length
+          skipped_count = suite.skipped.length
+          passed_count = suite.passed.length
 
           messages = []
           messages << "#{passed_count} passed".green
@@ -96,7 +81,6 @@ module Fastlane
             UI.message "#{suite.name}: #{message} #{test_counts}"
           else
             message = "You have failing tests!".red
-            #UI.user_error! "#{message} #{test_counts}"
             UI.message "#{suite.name}: #{message} #{test_counts}"
           end
 
@@ -105,7 +89,6 @@ module Fastlane
           testCaseSummary = ""
 
           suite.failed.each do |result|
-            #testCaseSummary += "🔥 <#{result.webLink}|#{result.name}>\n"
             testCaseSummary += "🔥 #{result.name}\n"
           end
           # suite.passed.each do |result|
