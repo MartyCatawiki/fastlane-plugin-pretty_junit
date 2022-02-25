@@ -65,7 +65,10 @@ module Fastlane
       def self.get_suite_name(file_path) 
         dot_rindex = file_path.rindex('/')
         suite_name = file_path[0..dot_rindex-1]
-        dot_rindex2 = suite_name.rindex('/')
+        dot_rindex2 = suite_name.rindex('/shard')
+        if dot_rindex2 == nil
+          dot_rindex2 = suite_name.rindex('/')
+        end
         return file_path[dot_rindex2+1..dot_rindex-1]
       end
 
